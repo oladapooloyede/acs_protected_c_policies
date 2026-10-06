@@ -1,0 +1,43 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-writable-root-filesystem
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "CM-5, SI-7, SI-7(1)"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Writable Container Root Filesystem"
+  description: >-
+    Alerts when a container runs with a writable root filesystem instead of
+    readOnlyRootFilesystem true. Writable paths should be explicit emptyDir or
+    persistent volumes, not the whole image.
+  rationale: >-
+    An immutable root filesystem stops an attacker from dropping tooling or modifying
+    application binaries in place, and it makes runtime file integrity monitoring
+    meaningful rather than noisy.
+  remediation: >-
+    Set readOnlyRootFilesystem true in the container security context and mount
+    writable emptyDir volumes at the specific paths the application needs, such as
+    /tmp and cache directories.
+  categories:
+    - "Security Best Practices"
+    - "Docker CIS"
+  lifecycleStages:
+    - DEPLOY
+  severity: MEDIUM_SEVERITY
+  policySections:
+    - sectionName: "Root filesystem is writable"
+      policyGroups:
+        - fieldName: "Read-Only Root Filesystem"
+          booleanOperator: OR
+          values:
+            - value: "false"
+  mitreAttackVectors:
+    - tactic: "TA0005"
+      techniques:
+        - "T1036"

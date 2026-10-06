@@ -1,0 +1,52 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-required-classification-metadata
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "CM-8, PM-5, RA-2, AC-16"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+    protected-c.policy.local/tuning-required: "true"
+spec:
+  policyName: "Protected C - Missing Classification Or Ownership Metadata"
+  description: >-
+    Alerts when a workload is missing the data classification label, the owning
+    business unit label, or the system authority-to-operate annotation required for
+    every workload in a Protected C boundary.
+  rationale: >-
+    Accreditation requires a defensible inventory that states, for each workload, what
+    classification of information it handles and who is accountable for it. Metadata
+    enforced at admission is the only version of that inventory that stays accurate.
+  remediation: >-
+    Add the required labels and annotation to the workload template. Adopt them in the
+    shared Helm chart or Kustomize base so new services inherit them automatically.
+  categories:
+    - "Security Best Practices"
+    - "DevOps Best Practices"
+  lifecycleStages:
+    - DEPLOY
+  severity: MEDIUM_SEVERITY
+  policySections:
+    # TUNE ME: replace these keys with your department's metadata standard.
+    - sectionName: "Data classification label is missing or invalid"
+      policyGroups:
+        - fieldName: "Required Label"
+          booleanOperator: OR
+          values:
+            - value: "classification=protected-c"
+    - sectionName: "Owner label is missing"
+      policyGroups:
+        - fieldName: "Required Label"
+          booleanOperator: OR
+          values:
+            - value: "owner|team=.+"
+    - sectionName: "Authority to operate annotation is missing"
+      policyGroups:
+        - fieldName: "Required Annotation"
+          booleanOperator: OR
+          values:
+            - value: "ato-reference=.+"

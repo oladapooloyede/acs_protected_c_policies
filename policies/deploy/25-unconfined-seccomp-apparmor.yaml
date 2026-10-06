@@ -1,0 +1,47 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-unconfined-seccomp-apparmor
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "CM-7, SC-39, SI-16"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Unconfined Seccomp Or AppArmor Profile"
+  description: >-
+    Alerts when a workload runs with an unconfined seccomp profile or an unconfined
+    AppArmor profile, disabling kernel-level syscall and access mediation.
+  rationale: >-
+    Seccomp and AppArmor are the last line of defence between a compromised process
+    and the host kernel. Running unconfined removes that mediation entirely and
+    materially widens the container escape surface for Protected C workloads.
+  remediation: >-
+    Set seccompProfile type to RuntimeDefault, or to Localhost with a reviewed custom
+    profile. Remove any container.apparmor annotation that sets unconfined.
+  categories:
+    - "Privileges"
+    - "Security Best Practices"
+  lifecycleStages:
+    - DEPLOY
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Seccomp is unconfined"
+      policyGroups:
+        - fieldName: "Seccomp Profile Type"
+          booleanOperator: OR
+          values:
+            - value: "UNCONFINED"
+    - sectionName: "AppArmor is unconfined"
+      policyGroups:
+        - fieldName: "AppArmor Profile"
+          booleanOperator: OR
+          values:
+            - value: "unconfined"
+  mitreAttackVectors:
+    - tactic: "TA0005"
+      techniques:
+        - "T1562.001"

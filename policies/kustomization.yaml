@@ -1,0 +1,49 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Detect-only baseline. Every policy here reports violations but takes no
+# enforcement action. Apply overlays/enforce to turn on blocking.
+namespace: stackrox
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: acs-protected-c-policies
+
+resources:
+  - audit/50-secret-access.yaml
+  - audit/51-rbac-scc-modification.yaml
+  - audit/52-network-boundary-modification.yaml
+  - audit/53-user-impersonation.yaml
+  - build/01-unapproved-registry.yaml
+  - build/02-unsigned-image.yaml
+  - build/03-fixable-severe-vulnerability.yaml
+  - build/04-known-exploited-vulnerability.yaml
+  - build/05-vulnerability-remediation-sla.yaml
+  - build/06-unscanned-or-stale-image.yaml
+  - build/07-mutable-image-tag.yaml
+  - build/08-image-runs-as-root.yaml
+  - build/09-package-manager-in-image.yaml
+  - deploy/20-privileged-container.yaml
+  - deploy/21-host-namespace-sharing.yaml
+  - deploy/22-dangerous-capabilities.yaml
+  - deploy/23-capabilities-not-dropped.yaml
+  - deploy/24-writable-root-filesystem.yaml
+  - deploy/25-unconfined-seccomp-apparmor.yaml
+  - deploy/26-sensitive-host-mount.yaml
+  - deploy/27-container-runtime-socket.yaml
+  - deploy/28-elevated-rbac.yaml
+  - deploy/29-default-service-account.yaml
+  - deploy/30-missing-network-policy.yaml
+  - deploy/31-external-exposure.yaml
+  - deploy/32-secrets-in-environment.yaml
+  - deploy/33-required-classification-metadata.yaml
+  - deploy/34-missing-resource-limits.yaml
+  - runtime/40-pod-exec-attach-portforward.yaml
+  - runtime/41-unexpected-process.yaml
+  - runtime/42-unexpected-network-flow.yaml
+  - runtime/43-offensive-tooling-execution.yaml
+  - runtime/44-runtime-package-management.yaml
+  - runtime/45-account-modification.yaml
+  - runtime/46-root-shell-in-container.yaml

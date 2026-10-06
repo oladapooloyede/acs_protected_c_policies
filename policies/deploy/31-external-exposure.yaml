@@ -1,0 +1,52 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-external-exposure
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-4, SC-7, SC-7(3)"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+    protected-c.policy.local/tuning-required: "true"
+spec:
+  policyName: "Protected C - Workload Exposed Outside The Cluster"
+  description: >-
+    Alerts when a workload is published outside the cluster through a LoadBalancer,
+    NodePort, host port or OpenShift Route. Exclude the small set of accredited
+    ingress points for your system.
+  rationale: >-
+    Every external exposure is a new entry point into the Protected C boundary that
+    must be individually accredited, monitored and protected. Exposures created
+    incidentally by a developer bypass that review.
+  remediation: >-
+    Remove the Route or external Service. Route all external traffic through the
+    accredited ingress gateway, and add that gateway to this policy's exclusions.
+  categories:
+    - "Zero Trust"
+    - "Security Best Practices"
+  lifecycleStages:
+    - DEPLOY
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Published outside the cluster"
+      policyGroups:
+        - fieldName: "Port Exposure Method"
+          booleanOperator: OR
+          values:
+            - value: "EXTERNAL"
+            - value: "NODE"
+            - value: "HOST"
+            - value: "ROUTE"
+  exclusions:
+    # TUNE ME: list the accredited ingress points for this system.
+    - name: "Accredited ingress gateway"
+      deployment:
+        scope:
+          namespace: "protected-c-ingress"
+  mitreAttackVectors:
+    - tactic: "TA0001"
+      techniques:
+        - "T1190"

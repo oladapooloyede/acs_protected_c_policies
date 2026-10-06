@@ -1,0 +1,38 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-capabilities-not-dropped
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-6, CM-7"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Container Does Not Drop All Capabilities"
+  description: >-
+    Alerts when a container does not drop ALL Linux capabilities in its security
+    context. Protected C workloads must start from zero capabilities and add back only
+    what is demonstrably required.
+  rationale: >-
+    Default capability sets are broad and grant privileges almost no application uses.
+    Explicitly dropping ALL turns capability grants into a deliberate, reviewable
+    decision instead of an inherited default.
+  remediation: >-
+    Add capabilities drop ALL to the container security context, then add back only
+    the specific capabilities the workload needs, with justification.
+  categories:
+    - "Privileges"
+    - "Security Best Practices"
+  lifecycleStages:
+    - DEPLOY
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "ALL is not dropped"
+      policyGroups:
+        - fieldName: "Drop Capabilities"
+          booleanOperator: OR
+          values:
+            - value: "ALL"

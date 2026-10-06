@@ -1,0 +1,46 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-user-impersonation
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: audit
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-6(9), AU-2, AU-6, AU-10, IA-2"
+    protected-c.policy.local/recommended-enforcement: "none - ACS forbids enforcement on audit log policies"
+    protected-c.policy.local/prerequisite: >-
+      Requires OpenShift audit log collection to be enabled on the secured cluster.
+spec:
+  policyName: "Protected C - Kubernetes API Call Using Impersonation"
+  description: >-
+    Alerts when a principal uses the Kubernetes impersonation headers to act as
+    another user, group or service account.
+  rationale: >-
+    Impersonation deliberately separates the acting identity from the authorized one.
+    At Protected C that undermines non-repudiation, which is a mandatory property of
+    the audit record, and it is a standard technique for privilege escalation that
+    leaves an otherwise ordinary-looking trail.
+  remediation: >-
+    Confirm who impersonated whom and why. Remove the impersonate verb from all roles
+    except a tightly controlled break-glass role, and alert on every use of that role.
+  categories:
+    - "Kubernetes Events"
+    - "Anomalous Activity"
+    - "Privileges"
+  lifecycleStages:
+    - RUNTIME
+  eventSource: AUDIT_LOG_EVENT
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Request was made through impersonation"
+      policyGroups:
+        - fieldName: "Is Impersonated User"
+          booleanOperator: OR
+          values:
+            - value: "true"
+  mitreAttackVectors:
+    - tactic: "TA0004"
+      techniques:
+        - "T1078"

@@ -1,0 +1,54 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-network-boundary-modification
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: audit
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-4, AU-2, AU-6, CM-3, SC-7, SC-7(5)"
+    protected-c.policy.local/recommended-enforcement: "none - ACS forbids enforcement on audit log policies"
+    protected-c.policy.local/prerequisite: >-
+      Requires OpenShift audit log collection to be enabled on the secured cluster.
+spec:
+  policyName: "Protected C - Network Policy Or Egress Firewall Modified"
+  description: >-
+    Alerts when a NetworkPolicy or an OpenShift EgressFirewall is created, updated,
+    patched or deleted.
+  rationale: >-
+    NetworkPolicies and egress firewalls are the technical boundary of the Protected C
+    enclave. Weakening one is the step an attacker takes before exfiltration, and it
+    is also the most common way a boundary is eroded accidentally during a deployment.
+  remediation: >-
+    Compare the change against the approved data flow documentation and change record.
+    Revert unapproved changes. Manage all segmentation objects through GitOps with
+    mandatory review by the security authority.
+  categories:
+    - "Kubernetes Events"
+    - "System Modification"
+    - "Zero Trust"
+  lifecycleStages:
+    - RUNTIME
+  eventSource: AUDIT_LOG_EVENT
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Segmentation object changed"
+      policyGroups:
+        - fieldName: "Kubernetes Resource"
+          booleanOperator: OR
+          values:
+            - value: "NETWORK_POLICIES"
+            - value: "EGRESS_FIREWALLS"
+        - fieldName: "Kubernetes API Verb"
+          booleanOperator: OR
+          values:
+            - value: "CREATE"
+            - value: "UPDATE"
+            - value: "PATCH"
+            - value: "DELETE"
+  mitreAttackVectors:
+    - tactic: "TA0005"
+      techniques:
+        - "T1562.004"

@@ -1,0 +1,49 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-missing-network-policy
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-4, SC-7, SC-7(5)"
+    protected-c.policy.local/recommended-enforcement: "none - ACS forbids enforcement on network policy criteria"
+spec:
+  policyName: "Protected C - Workload Without Network Policy Isolation"
+  description: >-
+    Alerts when a workload has no ingress NetworkPolicy or no egress NetworkPolicy
+    selecting it. Protected C requires default-deny segmentation in both directions.
+  rationale: >-
+    Without a selecting NetworkPolicy a pod is reachable from, and can reach, every
+    other pod permitted by the cluster default. Default-deny with explicit allows is
+    the control that keeps Protected C data flows inside their authorized path and
+    makes egress exfiltration visible.
+  remediation: >-
+    Apply a default-deny NetworkPolicy in the namespace and add explicit ingress and
+    egress allow rules for each required flow. Record the permitted flows in the
+    system's data flow documentation.
+  categories:
+    - "Zero Trust"
+    - "Security Best Practices"
+  lifecycleStages:
+    - DEPLOY
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "No ingress network policy selects this workload"
+      policyGroups:
+        - fieldName: "Has Ingress Network Policy"
+          booleanOperator: OR
+          values:
+            - value: "false"
+    - sectionName: "No egress network policy selects this workload"
+      policyGroups:
+        - fieldName: "Has Egress Network Policy"
+          booleanOperator: OR
+          values:
+            - value: "false"
+  mitreAttackVectors:
+    - tactic: "TA0008"
+      techniques:
+        - "T1210"

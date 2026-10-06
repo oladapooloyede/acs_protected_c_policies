@@ -1,0 +1,47 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-account-modification
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: runtime
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-2, AC-2(4), IA-5, SI-4"
+    protected-c.policy.local/recommended-enforcement: "KILL_POD_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Account Or Credential Modification In Container"
+  description: >-
+    Alerts when user, group or password management utilities execute inside a running
+    container.
+  rationale: >-
+    Containers are immutable workloads with no local account lifecycle. Creating a
+    user or changing a password inside one is either a serious misconfiguration or an
+    attacker establishing persistence, and in both cases it breaks the identity model
+    the Protected C accreditation relies on.
+  remediation: >-
+    Investigate as a suspected compromise. Define the runtime user in the image at
+    build time and never manage accounts inside a running container.
+  categories:
+    - "System Modification"
+    - "Privileges"
+  lifecycleStages:
+    - RUNTIME
+  eventSource: DEPLOYMENT_EVENT
+  severity: CRITICAL_SEVERITY
+  policySections:
+    - sectionName: "Account or credential utility executed"
+      policyGroups:
+        - fieldName: "Process Name"
+          booleanOperator: OR
+          values:
+            - value: "useradd|adduser|userdel|deluser|usermod"
+            - value: "groupadd|addgroup|groupdel|delgroup|groupmod|gpasswd"
+            - value: "passwd|chpasswd|chage|chsh|chfn|newusers"
+            - value: "vipw|vigr|pwck|grpck|pwconv|pwunconv|grpconv|grpunconv"
+            - value: "su|sudo|visudo"
+  mitreAttackVectors:
+    - tactic: "TA0003"
+      techniques:
+        - "T1136.001"

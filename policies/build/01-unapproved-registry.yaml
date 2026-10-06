@@ -1,0 +1,50 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-unapproved-registry
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: build
+  annotations:
+    protected-c.policy.local/itsg33-controls: "CM-7, SA-12, SI-7"
+    protected-c.policy.local/recommended-enforcement: "FAIL_BUILD_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT"
+    protected-c.policy.local/tuning-required: "true"
+spec:
+  policyName: "Protected C - Image From Unapproved Registry"
+  description: >-
+    Alerts when a workload uses a container image sourced from a registry that is
+    not on the approved Protected C registry allowlist. Protected C environments
+    must only consume images from accredited, internally mirrored registries that
+    sit inside the authorized security boundary.
+  rationale: >-
+    Pulling images directly from public or unaccredited registries moves an
+    uncontrolled binary across the Protected C boundary and defeats supply chain
+    provenance, mirroring and scanning controls.
+  remediation: >-
+    Mirror the required image into the approved internal registry, re-scan it, and
+    update the workload manifest to reference the mirrored image. If a new registry
+    must be accredited, add it to this policy's allowlist through change management.
+  categories:
+    - "Supply Chain Security"
+  lifecycleStages:
+    - BUILD
+    - DEPLOY
+  severity: CRITICAL_SEVERITY
+  policySections:
+    - sectionName: "Registry is not on the Protected C allowlist"
+      policyGroups:
+        # TUNE ME: replace these with the registries accredited for your boundary.
+        - fieldName: "Image Registry"
+          booleanOperator: OR
+          negate: true
+          values:
+            - value: "registry.redhat.io"
+            - value: "registry.access.redhat.com"
+            - value: "image-registry.openshift-image-registry.svc:5000"
+            - value: "quay-registry.protected-c.internal"
+  mitreAttackVectors:
+    - tactic: "TA0001"
+      techniques:
+        - "T1195.002"

@@ -1,0 +1,54 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-host-namespace-sharing
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-6, SC-7, SC-39"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Host Namespace Sharing"
+  description: >-
+    Alerts when a workload shares the host network, PID or IPC namespace. Protected C
+    application workloads must remain inside their own namespaces so that node-level
+    traffic, processes and shared memory stay out of reach.
+  rationale: >-
+    Host namespace sharing lets a container observe and interact with workloads it
+    was never authorized to see, including other tenants on the same node. At
+    Protected C this is a direct path to cross-domain information disclosure.
+  remediation: >-
+    Remove hostNetwork, hostPID and hostIPC from the pod specification. If node-level
+    access is genuinely required, move the function to an accredited platform
+    component with its own authorization rather than an application workload.
+  categories:
+    - "Privileges"
+  lifecycleStages:
+    - DEPLOY
+  severity: CRITICAL_SEVERITY
+  policySections:
+    - sectionName: "Shares the host network namespace"
+      policyGroups:
+        - fieldName: "Host Network"
+          booleanOperator: OR
+          values:
+            - value: "true"
+    - sectionName: "Shares the host PID namespace"
+      policyGroups:
+        - fieldName: "Host PID"
+          booleanOperator: OR
+          values:
+            - value: "true"
+    - sectionName: "Shares the host IPC namespace"
+      policyGroups:
+        - fieldName: "Host IPC"
+          booleanOperator: OR
+          values:
+            - value: "true"
+  mitreAttackVectors:
+    - tactic: "TA0004"
+      techniques:
+        - "T1611"

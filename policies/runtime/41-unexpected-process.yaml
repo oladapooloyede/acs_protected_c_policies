@@ -1,0 +1,46 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-unexpected-process
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: runtime
+  annotations:
+    protected-c.policy.local/itsg33-controls: "SI-4, SI-4(2), CM-7(5), AU-6"
+    protected-c.policy.local/recommended-enforcement: "KILL_POD_ENFORCEMENT"
+    protected-c.policy.local/prerequisite: >-
+      Process baselines must be locked for the target deployments before this policy
+      is useful. Run in detect-only through at least one full business cycle first.
+spec:
+  policyName: "Protected C - Process Outside The Locked Baseline"
+  description: >-
+    Alerts when a process executes inside a container that is not part of that
+    deployment's locked process baseline. This is the allowlisting control for
+    Protected C runtime behaviour.
+  rationale: >-
+    Protected C workloads have narrow, predictable process behaviour. Once the
+    baseline is locked, any new executable is by definition unexplained, which detects
+    post-exploitation activity that no signature-based control would catch.
+  remediation: >-
+    Investigate the process and its parent. If it is legitimate, add it to the
+    deployment's process baseline through change management. If not, treat it as a
+    suspected compromise and follow the incident response plan.
+  categories:
+    - "Anomalous Activity"
+  lifecycleStages:
+    - RUNTIME
+  eventSource: DEPLOYMENT_EVENT
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Process is not in the locked baseline"
+      policyGroups:
+        - fieldName: "Unexpected Process Executed"
+          booleanOperator: OR
+          values:
+            - value: "true"
+  mitreAttackVectors:
+    - tactic: "TA0002"
+      techniques:
+        - "T1059"

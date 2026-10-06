@@ -1,0 +1,53 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-runtime-package-management
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: runtime
+  annotations:
+    protected-c.policy.local/itsg33-controls: "CM-5, CM-7(5), CM-11, SI-7"
+    protected-c.policy.local/recommended-enforcement: "KILL_POD_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Package Management Executed At Runtime"
+  description: >-
+    Alerts when a package manager or language package installer runs inside a running
+    container.
+  rationale: >-
+    Installing software at runtime means the running workload no longer matches its
+    accredited, scanned image. It is also the most common way an attacker stages
+    additional tooling after gaining execution.
+  remediation: >-
+    Install all dependencies at build time into the image. Redeploy to change
+    software. Remove package managers from runtime images so the attempt fails even
+    if initiated.
+  categories:
+    - "Package Management"
+    - "System Modification"
+  lifecycleStages:
+    - RUNTIME
+  eventSource: DEPLOYMENT_EVENT
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Operating system package manager executed"
+      policyGroups:
+        - fieldName: "Process Name"
+          booleanOperator: OR
+          values:
+            - value: "apt|apt-get|apt-key|dpkg"
+            - value: "rpm|yum|dnf|microdnf"
+            - value: "apk"
+    - sectionName: "Language package manager executed"
+      policyGroups:
+        - fieldName: "Process Name"
+          booleanOperator: OR
+          values:
+            - value: "pip|pip3|easy_install"
+            - value: "npm|yarn|pnpm"
+            - value: "gem|cpan"
+  mitreAttackVectors:
+    - tactic: "TA0011"
+      techniques:
+        - "T1105"

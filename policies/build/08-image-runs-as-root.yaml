@@ -1,0 +1,44 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-image-runs-as-root
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: build
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-6, AC-6(10), CM-7"
+    protected-c.policy.local/recommended-enforcement: "FAIL_BUILD_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Image Configured To Run As Root"
+  description: >-
+    Alerts when an image declares root (UID 0) as its default user. Protected C
+    workloads must run as an unprivileged, non-root user, consistent with the
+    restricted-v2 security context constraint on OpenShift.
+  rationale: >-
+    Running as root collapses the distance between a compromised application process
+    and full container control, which materially raises the chance that a single
+    application flaw exposes Protected C information.
+  remediation: >-
+    Add a non-root USER directive to the Containerfile, make required paths writable
+    by that user, and run the workload under the restricted-v2 SCC.
+  categories:
+    - "Privileges"
+    - "Docker CIS"
+  lifecycleStages:
+    - BUILD
+    - DEPLOY
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Image default user is root"
+      policyGroups:
+        - fieldName: "Image User"
+          booleanOperator: OR
+          values:
+            - value: "0"
+            - value: "root"
+  mitreAttackVectors:
+    - tactic: "TA0004"
+      techniques:
+        - "T1611"

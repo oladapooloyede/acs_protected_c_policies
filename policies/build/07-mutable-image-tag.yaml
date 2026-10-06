@@ -1,0 +1,46 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-mutable-image-tag
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: build
+  annotations:
+    protected-c.policy.local/itsg33-controls: "CM-2, CM-3, CM-8"
+    protected-c.policy.local/recommended-enforcement: "FAIL_BUILD_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Mutable Or Floating Image Tag"
+  description: >-
+    Alerts when a workload references a floating tag such as latest, main, master,
+    dev, test, staging or snapshot instead of an immutable, uniquely versioned tag.
+  rationale: >-
+    A floating tag means the running image can change without any change to the
+    manifest, which breaks configuration baselining and makes it impossible to prove
+    after the fact which code processed Protected C information.
+  remediation: >-
+    Reference images by an immutable release tag or, preferably, by digest. Configure
+    the registry to reject tag overwrites for accredited repositories.
+  categories:
+    - "DevOps Best Practices"
+    - "Security Best Practices"
+  lifecycleStages:
+    - BUILD
+    - DEPLOY
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Image tag is floating or environment-named"
+      policyGroups:
+        - fieldName: "Image Tag"
+          booleanOperator: OR
+          values:
+            - value: "latest"
+            - value: "main"
+            - value: "master"
+            - value: "dev"
+            - value: "develop"
+            - value: "test"
+            - value: "staging"
+            - value: "snapshot"
+            - value: "r/.*-SNAPSHOT"

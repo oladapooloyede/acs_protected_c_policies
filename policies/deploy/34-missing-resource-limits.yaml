@@ -1,0 +1,45 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-missing-resource-limits
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "SC-5, SC-6, CP-2"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Missing CPU Or Memory Limits"
+  description: >-
+    Alerts when a container does not declare both a CPU limit and a memory limit.
+  rationale: >-
+    An unbounded container can starve co-located workloads on the same node, turning a
+    single buggy or compromised pod into a denial of service against other Protected C
+    services. Limits also make resource-exhaustion attacks visible and bounded.
+  remediation: >-
+    Declare resources.limits.cpu and resources.limits.memory on every container, and
+    apply a namespace LimitRange so the default is never unbounded.
+  categories:
+    - "DevOps Best Practices"
+  lifecycleStages:
+    - DEPLOY
+  severity: MEDIUM_SEVERITY
+  policySections:
+    - sectionName: "No CPU limit set"
+      policyGroups:
+        - fieldName: "Container CPU Limit"
+          booleanOperator: OR
+          values:
+            - value: "0"
+    - sectionName: "No memory limit set"
+      policyGroups:
+        - fieldName: "Container Memory Limit"
+          booleanOperator: OR
+          values:
+            - value: "0"
+  mitreAttackVectors:
+    - tactic: "TA0040"
+      techniques:
+        - "T1499"

@@ -1,0 +1,54 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-package-manager-in-image
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: build
+  annotations:
+    protected-c.policy.local/itsg33-controls: "CM-7, CM-7(5), SI-7"
+    protected-c.policy.local/recommended-enforcement: "FAIL_BUILD_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Package Manager Or Network Tooling In Image"
+  description: >-
+    Alerts when a package manager or general-purpose network utility is present in a
+    runtime image. Protected C runtime images should be minimal and contain only what
+    the application needs to execute.
+  rationale: >-
+    Package managers and transfer utilities are the standard tooling an attacker uses
+    to stage a second payload or exfiltrate data after initial access. Removing them
+    from runtime images denies that capability outright.
+  remediation: >-
+    Use a multi-stage build so that build-time tooling never reaches the final layer,
+    or base the image on a minimal runtime such as UBI micro.
+  categories:
+    - "Package Management"
+    - "Network Tools"
+  lifecycleStages:
+    - BUILD
+    - DEPLOY
+  severity: MEDIUM_SEVERITY
+  policySections:
+    - sectionName: "Package manager present"
+      policyGroups:
+        - fieldName: "Image Component"
+          booleanOperator: OR
+          values:
+            - value: "apt|apt-get|dpkg="
+            - value: "apk-tools="
+            - value: "rpm|microdnf|dnf|yum="
+    - sectionName: "Network or transfer tooling present"
+      policyGroups:
+        - fieldName: "Image Component"
+          booleanOperator: OR
+          values:
+            - value: "curl="
+            - value: "wget="
+            - value: "nmap|nmap-ncat|netcat|ncat="
+            - value: "openssh-clients|openssh-server="
+  mitreAttackVectors:
+    - tactic: "TA0011"
+      techniques:
+        - "T1105"

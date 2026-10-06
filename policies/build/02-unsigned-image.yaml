@@ -1,0 +1,50 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-unsigned-image
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: build
+  annotations:
+    protected-c.policy.local/itsg33-controls: "CM-5, SA-12, SI-7, SI-7(1)"
+    protected-c.policy.local/recommended-enforcement: "FAIL_BUILD_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT"
+    protected-c.policy.local/tuning-required: "true"
+    protected-c.policy.local/note: >-
+      Disabled by default. The value below is a placeholder signature integration ID
+      and MUST be replaced with the real ID from Central before enabling.
+spec:
+  policyName: "Protected C - Unsigned Or Untrusted Container Image"
+  description: >-
+    Alerts when a container image has not been verified against the accredited
+    Protected C image signature integration. Every image crossing into a Protected C
+    cluster must carry a valid signature from the authorized signing authority.
+  rationale: >-
+    Signature verification is the control that binds an image to an accredited build
+    pipeline. Without it, a tampered or substituted image is indistinguishable from a
+    legitimate one, which is an unacceptable risk at the Protected C level.
+  remediation: >-
+    Rebuild and sign the image using the accredited signing key, push it to the
+    approved registry, and redeploy. Do not grant exceptions for unsigned images.
+  categories:
+    - "Supply Chain Security"
+  lifecycleStages:
+    - BUILD
+    - DEPLOY
+  severity: CRITICAL_SEVERITY
+  # Enable only after substituting a real signature integration ID below.
+  disabled: true
+  policySections:
+    - sectionName: "Image is not verified by the Protected C signing authority"
+      policyGroups:
+        # TUNE ME: get the real ID from Central -> Platform Configuration ->
+        # Integrations -> Signature. Format: io.stackrox.signatureintegration.<uuid>
+        - fieldName: "Image Signature Verified By"
+          booleanOperator: OR
+          values:
+            - value: "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000000"
+  mitreAttackVectors:
+    - tactic: "TA0001"
+      techniques:
+        - "T1195.002"

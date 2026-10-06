@@ -1,0 +1,317 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Enforcing overlay. Adds blocking enforcement to every policy that supports it.
+#
+# Deliberately NOT enforced here:
+#   pc-missing-network-policy  - ACS rejects enforcement on network policy criteria
+#   pc-unexpected-network-flow - baseline driven, too easy to cause an outage
+#   all policies under policies/audit/ - ACS forbids enforcement on audit log policies
+#
+# Do not apply this overlay until the detect-only baseline has run clean for at
+# least one full business cycle. See docs/deployment-guide.md.
+
+namespace: stackrox
+
+resources:
+  - ../../policies
+
+patches:
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-unapproved-registry
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - FAIL_BUILD_ENFORCEMENT
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-unsigned-image
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - FAIL_BUILD_ENFORCEMENT
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-fixable-severe-vulnerability
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - FAIL_BUILD_ENFORCEMENT
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-known-exploited-vulnerability
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - FAIL_BUILD_ENFORCEMENT
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-vulnerability-remediation-sla
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-unscanned-or-stale-image
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - FAIL_BUILD_ENFORCEMENT
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-mutable-image-tag
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - FAIL_BUILD_ENFORCEMENT
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-image-runs-as-root
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - FAIL_BUILD_ENFORCEMENT
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-package-manager-in-image
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - FAIL_BUILD_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-privileged-container
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-host-namespace-sharing
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-dangerous-capabilities
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-capabilities-not-dropped
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-writable-root-filesystem
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-unconfined-seccomp-apparmor
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-sensitive-host-mount
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-container-runtime-socket
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-elevated-rbac
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-default-service-account
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-external-exposure
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-secrets-in-environment
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-required-classification-metadata
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-missing-resource-limits
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - SCALE_TO_ZERO_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-pod-exec-attach-portforward
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - FAIL_KUBE_REQUEST_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-unexpected-process
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - KILL_POD_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-offensive-tooling-execution
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - KILL_POD_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-runtime-package-management
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - KILL_POD_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-account-modification
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - KILL_POD_ENFORCEMENT
+  - target:
+      group: config.stackrox.io
+      version: v1alpha1
+      kind: SecurityPolicy
+      name: pc-root-shell-in-container
+    patch: |-
+      - op: add
+        path: /spec/enforcementActions
+        value:
+        - KILL_POD_ENFORCEMENT

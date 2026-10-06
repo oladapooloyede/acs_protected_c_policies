@@ -1,0 +1,46 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-pod-exec-attach-portforward
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: runtime
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-6(9), AU-2, AU-6, AU-12"
+    protected-c.policy.local/recommended-enforcement: "FAIL_KUBE_REQUEST_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Interactive Access To A Running Pod"
+  description: >-
+    Alerts on kubectl or oc exec, attach and port-forward against a running pod.
+    Interactive access to a Protected C workload is an administrative action that must
+    be exceptional, attributed and reviewed.
+  rationale: >-
+    Exec and port-forward bypass application logging and the ingress path entirely. An
+    operator with exec can read in-memory Protected C data and leave no application
+    level trace, so these events must be captured as privileged activity.
+  remediation: >-
+    Diagnose through logs, metrics and ephemeral debug containers in a non-production
+    copy. Where interactive access is unavoidable, perform it under a break-glass
+    procedure with an approved change record and review the session afterwards.
+  categories:
+    - "Kubernetes Events"
+    - "Anomalous Activity"
+  lifecycleStages:
+    - RUNTIME
+  eventSource: DEPLOYMENT_EVENT
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Interactive pod access attempted"
+      policyGroups:
+        - fieldName: "Kubernetes Resource"
+          booleanOperator: OR
+          values:
+            - value: "PODS_EXEC"
+            - value: "PODS_ATTACH"
+            - value: "PODS_PORTFORWARD"
+  mitreAttackVectors:
+    - tactic: "TA0002"
+      techniques:
+        - "T1609"

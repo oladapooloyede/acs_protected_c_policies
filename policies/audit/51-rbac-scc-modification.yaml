@@ -1,0 +1,56 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-rbac-scc-modification
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: audit
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-2(4), AC-6, AU-2, AU-6, CM-3, CM-5"
+    protected-c.policy.local/recommended-enforcement: "none - ACS forbids enforcement on audit log policies"
+    protected-c.policy.local/prerequisite: >-
+      Requires OpenShift audit log collection to be enabled on the secured cluster.
+spec:
+  policyName: "Protected C - Cluster RBAC Or SCC Modified"
+  description: >-
+    Alerts when a ClusterRole, ClusterRoleBinding or SecurityContextConstraint is
+    created, updated, patched or deleted.
+  rationale: >-
+    Cluster RBAC and SCCs define who may do what, and which workloads may bypass the
+    Protected C hardening baseline. A change to either can silently dismantle the
+    controls the accreditation rests on, so every change must be detected and matched
+    to an approved change record.
+  remediation: >-
+    Verify the change against the change management record. Revert unapproved
+    modifications immediately. Manage cluster RBAC and SCCs exclusively through GitOps
+    so that direct API changes are always exceptions.
+  categories:
+    - "Kubernetes Events"
+    - "System Modification"
+    - "Privileges"
+  lifecycleStages:
+    - RUNTIME
+  eventSource: AUDIT_LOG_EVENT
+  severity: CRITICAL_SEVERITY
+  policySections:
+    - sectionName: "Cluster RBAC or SCC object changed"
+      policyGroups:
+        - fieldName: "Kubernetes Resource"
+          booleanOperator: OR
+          values:
+            - value: "CLUSTER_ROLES"
+            - value: "CLUSTER_ROLE_BINDINGS"
+            - value: "SECURITY_CONTEXT_CONSTRAINTS"
+        - fieldName: "Kubernetes API Verb"
+          booleanOperator: OR
+          values:
+            - value: "CREATE"
+            - value: "UPDATE"
+            - value: "PATCH"
+            - value: "DELETE"
+  mitreAttackVectors:
+    - tactic: "TA0004"
+      techniques:
+        - "T1078.003"

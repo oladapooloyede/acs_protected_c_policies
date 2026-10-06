@@ -1,0 +1,47 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-container-runtime-socket
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-6, AC-6(10), SC-39"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Container Runtime Socket Mounted"
+  description: >-
+    Alerts when a workload mounts the CRI-O, containerd or Docker runtime socket into
+    a container.
+  rationale: >-
+    Access to the container runtime socket is equivalent to root on the node. A
+    workload holding it can start a privileged container, read every secret mounted on
+    that node and disable monitoring, which is a total loss of containment for
+    Protected C information.
+  remediation: >-
+    Remove the runtime socket volume. Tooling that genuinely needs runtime visibility
+    should use the accredited platform integration, not a direct socket mount.
+  categories:
+    - "Privileges"
+    - "Docker CIS"
+  lifecycleStages:
+    - DEPLOY
+  severity: CRITICAL_SEVERITY
+  policySections:
+    - sectionName: "Runtime socket path is mounted"
+      policyGroups:
+        - fieldName: "Volume Source"
+          booleanOperator: OR
+          values:
+            - value: "/var/run/crio/crio.sock"
+            - value: "/run/crio/crio.sock"
+            - value: "/var/run/docker.sock"
+            - value: "/run/docker.sock"
+            - value: "/run/containerd/containerd.sock"
+            - value: "/var/run/containerd/containerd.sock"
+  mitreAttackVectors:
+    - tactic: "TA0004"
+      techniques:
+        - "T1610"

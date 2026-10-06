@@ -1,0 +1,46 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-unexpected-network-flow
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: runtime
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-4, SC-7, SI-4, SI-4(4)"
+    protected-c.policy.local/recommended-enforcement: "none - detect only, see docs/deployment-guide.md"
+    protected-c.policy.local/prerequisite: >-
+      Network baselines must be observed and locked for the target deployments before
+      this policy produces meaningful alerts.
+spec:
+  policyName: "Protected C - Network Flow Outside The Locked Baseline"
+  description: >-
+    Alerts when a container initiates or receives a network connection that is not in
+    its locked network baseline.
+  rationale: >-
+    Exfiltration of Protected C information and command-and-control both appear first
+    as a connection the workload has never made before. Baseline deviation is the
+    detection that does not depend on knowing the destination in advance.
+  remediation: >-
+    Investigate the peer and the direction of the flow. If legitimate, add it to the
+    network baseline and codify it as an explicit NetworkPolicy rule. If not, isolate
+    the workload and invoke incident response.
+  categories:
+    - "Anomalous Activity"
+    - "Zero Trust"
+  lifecycleStages:
+    - RUNTIME
+  eventSource: DEPLOYMENT_EVENT
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Flow is not in the locked network baseline"
+      policyGroups:
+        - fieldName: "Unexpected Network Flow Detected"
+          booleanOperator: OR
+          values:
+            - value: "true"
+  mitreAttackVectors:
+    - tactic: "TA0010"
+      techniques:
+        - "T1041"

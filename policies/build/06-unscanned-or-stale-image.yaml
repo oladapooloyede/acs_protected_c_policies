@@ -1,0 +1,50 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-unscanned-or-stale-image
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: build
+  annotations:
+    protected-c.policy.local/itsg33-controls: "RA-5, SI-2, CM-8"
+    protected-c.policy.local/recommended-enforcement: "FAIL_BUILD_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Unscanned Or Stale Image Scan Data"
+  description: >-
+    Alerts when an image has never been scanned, when its scan data is more than 7 days
+    old, or when the image itself is more than 90 days old. Protected C workloads must
+    run on images with current, trustworthy vulnerability data.
+  rationale: >-
+    Absent or stale scan data means the real vulnerability posture of a Protected C
+    workload is unknown. An unknown posture cannot be accredited, and a 90-day-old
+    image has almost certainly drifted from its patched baseline.
+  remediation: >-
+    Ensure the registry is integrated with the ACS scanner, trigger a rescan, and
+    rebuild images on a scheduled cadence so that no image exceeds the age threshold.
+  categories:
+    - "Vulnerability Management"
+  lifecycleStages:
+    - BUILD
+    - DEPLOY
+  severity: HIGH_SEVERITY
+  policySections:
+    - sectionName: "Image has never been scanned"
+      policyGroups:
+        - fieldName: "Unscanned Image"
+          booleanOperator: OR
+          values:
+            - value: "true"
+    - sectionName: "Scan data older than 7 days"
+      policyGroups:
+        - fieldName: "Image Scan Age"
+          booleanOperator: OR
+          values:
+            - value: "7"
+    - sectionName: "Image built more than 90 days ago"
+      policyGroups:
+        - fieldName: "Image Age"
+          booleanOperator: OR
+          values:
+            - value: "90"

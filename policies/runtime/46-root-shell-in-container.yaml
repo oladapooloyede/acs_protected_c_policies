@@ -1,0 +1,48 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-root-shell-in-container
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: runtime
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-6, AC-6(9), SI-4"
+    protected-c.policy.local/recommended-enforcement: "KILL_POD_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Interactive Shell Executed As Root"
+  description: >-
+    Alerts when an interactive shell is executed as UID 0 inside a container. Both
+    conditions must hold, which keeps this distinct from benign shell wrappers run by
+    an unprivileged application user.
+  rationale: >-
+    A root shell in a Protected C container is full control of that workload and
+    everything it can reach, with no application-level audit trail. It is a reliable
+    indicator of either an unsafe operational practice or active hands-on intrusion.
+  remediation: >-
+    Investigate as a suspected compromise. Remove shells from runtime images where
+    practical, run containers as a non-root user under restricted-v2, and route
+    legitimate diagnostics through ephemeral debug containers under change control.
+  categories:
+    - "Anomalous Activity"
+    - "Privileges"
+  lifecycleStages:
+    - RUNTIME
+  eventSource: DEPLOYMENT_EVENT
+  severity: CRITICAL_SEVERITY
+  policySections:
+    - sectionName: "Shell executed with an effective UID of 0"
+      policyGroups:
+        - fieldName: "Process Name"
+          booleanOperator: OR
+          values:
+            - value: "(/[s]*bin/){0,1}(ba|c|z|k|da){0,1}sh"
+        - fieldName: "Process UID"
+          booleanOperator: OR
+          values:
+            - value: "0"
+  mitreAttackVectors:
+    - tactic: "TA0002"
+      techniques:
+        - "T1059.004"

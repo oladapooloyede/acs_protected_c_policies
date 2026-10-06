@@ -1,0 +1,42 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-elevated-rbac
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-2, AC-3, AC-6, AC-6(5)"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Workload With Cluster Wide RBAC Permissions"
+  description: >-
+    Alerts when a workload's service account holds cluster-wide elevated permissions
+    or cluster-admin. Application workloads in a Protected C boundary should hold
+    namespace-scoped permissions only.
+  rationale: >-
+    A service account with cluster-wide rights lets a single compromised pod read
+    secrets and modify workloads across every namespace, collapsing the separation
+    between accredited and non-accredited data domains.
+  remediation: >-
+    Replace the ClusterRoleBinding with a namespace-scoped RoleBinding granting only
+    the verbs and resources the workload uses. Review with the data custodian before
+    granting any cluster-scoped right.
+  categories:
+    - "Privileges"
+  lifecycleStages:
+    - DEPLOY
+  severity: CRITICAL_SEVERITY
+  policySections:
+    - sectionName: "Service account holds cluster wide elevated permissions"
+      policyGroups:
+        - fieldName: "Minimum RBAC Permissions"
+          booleanOperator: OR
+          values:
+            - value: "ELEVATED_CLUSTER_WIDE"
+  mitreAttackVectors:
+    - tactic: "TA0004"
+      techniques:
+        - "T1078.003"

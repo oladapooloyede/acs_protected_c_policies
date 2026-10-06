@@ -1,0 +1,48 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-privileged-container
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-6, AC-6(10), CM-7, SC-39"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Privileged Container Or Privilege Escalation Allowed"
+  description: >-
+    Alerts when a container runs in privileged mode or permits privilege escalation
+    via setuid binaries. Neither is acceptable for an application workload inside a
+    Protected C boundary.
+  rationale: >-
+    A privileged container has effectively unrestricted access to the node, so
+    container isolation no longer bounds the blast radius. One compromised privileged
+    pod is equivalent to a compromised node and every secret scheduled onto it.
+  remediation: >-
+    Remove privileged true from the security context and set
+    allowPrivilegeEscalation to false. Grant only the specific Linux capabilities the
+    workload requires. Run under the restricted-v2 SCC.
+  categories:
+    - "Privileges"
+  lifecycleStages:
+    - DEPLOY
+  severity: CRITICAL_SEVERITY
+  policySections:
+    - sectionName: "Container runs privileged"
+      policyGroups:
+        - fieldName: "Privileged Container"
+          booleanOperator: OR
+          values:
+            - value: "true"
+    - sectionName: "Privilege escalation is permitted"
+      policyGroups:
+        - fieldName: "Allow Privilege Escalation"
+          booleanOperator: OR
+          values:
+            - value: "true"
+  mitreAttackVectors:
+    - tactic: "TA0004"
+      techniques:
+        - "T1611"

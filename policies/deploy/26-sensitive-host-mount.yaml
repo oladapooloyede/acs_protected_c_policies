@@ -1,0 +1,57 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-sensitive-host-mount
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: deploy
+  annotations:
+    protected-c.policy.local/itsg33-controls: "AC-6, AC-3, SC-39"
+    protected-c.policy.local/recommended-enforcement: "SCALE_TO_ZERO_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Sensitive Host Path Mounted"
+  description: >-
+    Alerts when a workload mounts a sensitive host path such as /etc, /proc, /sys,
+    /dev, /var/lib or /root, and separately when any host mount is writable.
+  rationale: >-
+    Mounting node system paths into a container exposes host credentials, kernel
+    interfaces and the configuration of every other workload on that node. A writable
+    host mount additionally allows persistent tampering with the node itself.
+  remediation: >-
+    Remove the hostPath volume. Where node data is genuinely needed, use a purpose
+    built operator or the downward API, and never mount host paths read-write from an
+    application workload.
+  categories:
+    - "Privileges"
+    - "Docker CIS"
+  lifecycleStages:
+    - DEPLOY
+  severity: CRITICAL_SEVERITY
+  policySections:
+    - sectionName: "Sensitive host path is mounted"
+      policyGroups:
+        - fieldName: "Volume Source"
+          booleanOperator: OR
+          values:
+            - value: "/etc.*"
+            - value: "/proc.*"
+            - value: "/sys.*"
+            - value: "/dev.*"
+            - value: "/boot.*"
+            - value: "/root.*"
+            - value: "/home.*"
+            - value: "/var/lib/kubelet.*"
+            - value: "/var/lib/etcd.*"
+            - value: "/var/log.*"
+    - sectionName: "Host mount is writable"
+      policyGroups:
+        - fieldName: "Writable Host Mount"
+          booleanOperator: OR
+          values:
+            - value: "true"
+  mitreAttackVectors:
+    - tactic: "TA0004"
+      techniques:
+        - "T1611"

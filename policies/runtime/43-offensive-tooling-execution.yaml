@@ -1,0 +1,58 @@
+---
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: pc-offensive-tooling-execution
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-protected-c-policies
+    protected-c.policy.local/stage: runtime
+  annotations:
+    protected-c.policy.local/itsg33-controls: "SI-3, SI-4, SI-4(2)"
+    protected-c.policy.local/recommended-enforcement: "KILL_POD_ENFORCEMENT"
+spec:
+  policyName: "Protected C - Reconnaissance Or Mining Tool Executed"
+  description: >-
+    Alerts when network reconnaissance, remote transfer or cryptocurrency mining
+    tooling executes inside a container.
+  rationale: >-
+    These binaries have no legitimate role in a Protected C application container.
+    Their execution is a high-confidence indicator of hands-on-keyboard activity,
+    lateral movement preparation or resource abuse following a compromise.
+  remediation: >-
+    Treat as a suspected compromise: isolate the pod, preserve evidence, and follow
+    the incident response plan. Rebuild the image without the tooling and verify how
+    the binary reached the container.
+  categories:
+    - "Network Tools"
+    - "Cryptocurrency Mining"
+    - "Anomalous Activity"
+  lifecycleStages:
+    - RUNTIME
+  eventSource: DEPLOYMENT_EVENT
+  severity: CRITICAL_SEVERITY
+  policySections:
+    - sectionName: "Network reconnaissance or transfer tooling"
+      policyGroups:
+        - fieldName: "Process Name"
+          booleanOperator: OR
+          values:
+            - value: "nmap|masscan|zmap"
+            - value: "nc|ncat|netcat|socat"
+            - value: "tcpdump|tshark|ngrep"
+            - value: "scp|sshfs|ssh-copy-id|rsync|sftp"
+            - value: "curl|wget"
+            - value: "ssh|sshd|telnet|ftp"
+    - sectionName: "Cryptocurrency mining tooling"
+      policyGroups:
+        - fieldName: "Process Name"
+          booleanOperator: OR
+          values:
+            - value: ".*sgminer|.*cgminer|.*cpuminer|.*minerd|.*geth|.*ethminer|.*xmr-stak.*|.*xmrminer|.*cpuminer-multi|.*xmrig"
+  mitreAttackVectors:
+    - tactic: "TA0007"
+      techniques:
+        - "T1046"
+    - tactic: "TA0040"
+      techniques:
+        - "T1496"
